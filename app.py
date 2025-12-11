@@ -704,13 +704,13 @@ css = """
 }
 """
 
-with gr.Blocks(css=css, title="BMS AI Assistant") as demo:
+with gr.Blocks(title="BMS AI Assistant") as demo:
     gr.HTML('<div id="header-title">BMS AI Assistant - Cummins Parts & Service</div>')
     with gr.Row():
         gr.Markdown(
             "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
         )
-    chatbot = gr.Chatbot(elem_id="chatbot", bubble_full_width=False, show_copy_button=True)
+    chatbot = gr.Chatbot(elem_id="chatbot", show_copy_button=True)
     with gr.Row():
         msg = gr.Textbox(label="Ask me about inventory, orders, or forecasts", scale=4)
         submit = gr.Button("Send", variant="primary")
@@ -721,4 +721,4 @@ with gr.Blocks(css=css, title="BMS AI Assistant") as demo:
     msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(css=css)
