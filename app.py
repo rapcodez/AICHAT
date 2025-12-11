@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import torch
 from fpdf import FPDF
 import gradio as gr
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
@@ -334,8 +335,13 @@ competitor_df = pd.DataFrame(COMPETITOR_SALES)
 
 def build_model():
     model_name = os.getenv("LLM_MODEL", "Qwen/Qwen2-0.5B-Instruct")
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_name,
+        device_map="cpu",
+        torch_dtype=torch.float32,
+        trust_remote_code=True,
+    )
     return pipeline(
         "text-generation",
         model=model,
@@ -344,10 +350,18 @@ def build_model():
         do_sample=True,
         temperature=0.3,
         top_p=0.9,
+        device=-1,
     )
 
 
-generator = build_model()
+generator = None
+
+
+def get_generator():
+    global generator
+    if generator is None:
+        generator = build_model()
+    return generator
 
 
 # ----------------------
@@ -531,7 +545,7 @@ def respond_with_model(prompt: str, history: List[Dict[str, str]]) -> str:
         "Keep answers short, avoid inventing data, and prefer bullet points."
     )
     input_text = f"{system}\n\n{dialogue}\nAssistant:"
-    result = generator(input_text)[0]["generated_text"]
+    result = get_generator()(input_text)[0]["generated_text"]
     return result.split("Assistant:")[-1].strip()
 
 
@@ -670,6 +684,7 @@ def stream_response(message: str, chat_history: List, state: Dict):
         yield chat_history + [[message, buffer.strip()]], updated_state, pdf_path
     assistant_history.append({"user": message, "assistant": response})
     updated_state["history"] = assistant_history
+    yield chat_history + [[message, response]], updated_state, pdf_path
 
 
 # ----------------------
@@ -704,13 +719,13 @@ css = """
 }
 """
 
-with gr.Blocks(title="BMS AI Assistant") as demo:
+with gr.Blocks(title="BMS AI Assistant", css=css) as demo:
     gr.HTML('<div id="header-title">BMS AI Assistant - Cummins Parts & Service</div>')
     with gr.Row():
         gr.Markdown(
             "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
         )
-    chatbot = gr.Chatbot(elem_id="chatbot", show_copy_button=True)
+    chatbot = gr.Chatbot(elem_id="chatbot")
     with gr.Row():
         msg = gr.Textbox(label="Ask me about inventory, orders, or forecasts", scale=4)
         submit = gr.Button("Send", variant="primary")
@@ -721,4 +736,4 @@ with gr.Blocks(title="BMS AI Assistant") as demo:
     msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
-    demo.launch(css=css)
+    demo.launch()
