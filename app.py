@@ -735,7 +735,7 @@ with gr.Blocks(title="BMS AI Assistant") as demo:
         gr.Markdown(
             "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
         )
-    chatbot = gr.Chatbot(elem_id="chatbot", type="value")
+    chatbot = gr.Chatbot(elem_id="chatbot")
     with gr.Row():
         msg = gr.Textbox(label="Ask me about inventory, orders, or forecasts", scale=4)
         submit = gr.Button("Send", variant="primary")
