@@ -676,24 +676,26 @@ def handle_intent(message: str, state: Dict, history: List[Dict[str, str]]):
 
 
 def stream_response(message: str, chat_history: List, state: Dict):
-    """Stream a response using tuple-based history for Gradio 6.1.0."""
+    """Stream a response using role/content message dictionaries."""
 
     state = state or {}
     assistant_history = state.get("history", [])
     response, pdf_path, updated_state = handle_intent(message, state, assistant_history)
 
-    history = list(chat_history or [])
-    history.append((message, ""))
+    history = normalize_chat_history(chat_history)
+    history.append({"role": "user", "content": message})
+    history.append({"role": "assistant", "content": ""})
+
     tokens = response.split()
     buffer = ""
     for tok in tokens:
         buffer += tok + " "
-        history[-1] = (message, buffer.strip())
+        history[-1] = {"role": "assistant", "content": buffer.strip()}
         yield history, updated_state, pdf_path
 
     assistant_history.append({"user": message, "assistant": response})
     updated_state["history"] = assistant_history
-    history[-1] = (message, response)
+    history[-1] = {"role": "assistant", "content": response}
     yield history, updated_state, pdf_path
 
 
@@ -701,14 +703,16 @@ def generate_report_from_state(chat_history: List, state: Dict):
     """Generate a PDF from the latest tables and append a chat confirmation."""
 
     state = state or {}
-    history = list(chat_history or [])
+    history = normalize_chat_history(chat_history)
     last_tables = state.get("last_tables")
     last_text = state.get("last_response", "Recent summary from assistant")
     if not last_tables:
-        history.append(("Generate report", "There's no recent data to include. Ask for inventory, orders, or forecasts first."))
+        history.append({"role": "user", "content": "Generate report"})
+        history.append({"role": "assistant", "content": "There's no recent data to include. Ask for inventory, orders, or forecasts first."})
         return history, state, None
     pdf_path = generate_pdf(last_text, last_tables)
-    history.append(("Generate report", "Inventory report generated. Use the download below."))
+    history.append({"role": "user", "content": "Generate report"})
+    history.append({"role": "assistant", "content": "Inventory report generated. Use the download below."})
     return history, state, pdf_path
 
 
@@ -815,9 +819,26 @@ welcome_modal = gr.HTML(
 """
 )
 
-initial_assistant_message = (
-    "", "Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitors, and PDF reports."
-)
+initial_assistant_message = {
+    "role": "assistant",
+    "content": "Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitors, and PDF reports.",
+}
+
+
+def normalize_chat_history(chat_history: List) -> List[Dict[str, str]]:
+    """Ensure chat history is a list of role/content dictionaries."""
+
+    normalized: List[Dict[str, str]] = []
+    for entry in chat_history or []:
+        if isinstance(entry, dict) and "role" in entry and "content" in entry:
+            normalized.append(entry)
+        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+            user, assistant = entry
+            if user:
+                normalized.append({"role": "user", "content": str(user)})
+            if assistant:
+                normalized.append({"role": "assistant", "content": str(assistant)})
+    return normalized
 
 with gr.Blocks(title="BMS AI Assistant") as demo:
     welcome_modal.render()
