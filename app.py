@@ -675,41 +675,41 @@ def handle_intent(message: str, state: Dict, history: List[Dict[str, str]]):
     return response, pdf_path, state
 
 
-def _normalize_history(chat_history: List) -> List[Dict[str, str]]:
-    """Convert Chatbot history into message dictionaries for Gradio 6.x."""
-
-    messages: List[Dict[str, str]] = []
-    for entry in chat_history or []:
-        if isinstance(entry, dict) and "role" in entry and "content" in entry:
-            messages.append(entry)
-        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
-            user_msg, assistant_msg = entry
-            messages.append({"role": "user", "content": str(user_msg)})
-            messages.append({"role": "assistant", "content": str(assistant_msg)})
-    return messages
-
-
 def stream_response(message: str, chat_history: List, state: Dict):
-    """Stream a response while keeping compatibility with Gradio 6.1 message format."""
+    """Stream a response using tuple-based history for Gradio 6.1.0."""
 
     state = state or {}
     assistant_history = state.get("history", [])
     response, pdf_path, updated_state = handle_intent(message, state, assistant_history)
 
-    ui_messages = _normalize_history(chat_history)
-    base_messages = ui_messages + [{"role": "user", "content": message}]
-
+    history = list(chat_history or [])
+    history.append((message, ""))
     tokens = response.split()
     buffer = ""
     for tok in tokens:
         buffer += tok + " "
-        partial_messages = base_messages + [{"role": "assistant", "content": buffer.strip()}]
-        yield partial_messages, updated_state, pdf_path
+        history[-1] = (message, buffer.strip())
+        yield history, updated_state, pdf_path
 
     assistant_history.append({"user": message, "assistant": response})
     updated_state["history"] = assistant_history
-    final_history = base_messages + [{"role": "assistant", "content": response}]
-    yield final_history, updated_state, pdf_path
+    history[-1] = (message, response)
+    yield history, updated_state, pdf_path
+
+
+def generate_report_from_state(chat_history: List, state: Dict):
+    """Generate a PDF from the latest tables and append a chat confirmation."""
+
+    state = state or {}
+    history = list(chat_history or [])
+    last_tables = state.get("last_tables")
+    last_text = state.get("last_response", "Recent summary from assistant")
+    if not last_tables:
+        history.append(("Generate report", "There's no recent data to include. Ask for inventory, orders, or forecasts first."))
+        return history, state, None
+    pdf_path = generate_pdf(last_text, last_tables)
+    history.append(("Generate report", "Inventory report generated. Use the download below."))
+    return history, state, pdf_path
 
 
 # ----------------------
@@ -725,16 +725,12 @@ suggestions = [
 ]
 
 css = """
-#chatbot .bot {
-    background-color: #f7f7f7 !important;
-    color: #111;
+:root {
+    --brand-red: #b81d13;
 }
-#chatbot .user {
-    background-color: #b81d13 !important;
-    color: white;
-}
+
 #header-title {
-    background-color: #b81d13;
+    background-color: var(--brand-red);
     color: white;
     padding: 12px;
     font-weight: bold;
@@ -742,23 +738,107 @@ css = """
     text-align: center;
     font-size: 20px;
 }
+
+#chat-wrapper {
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fafafa;
+}
+
+.gr-chatbot .message.user {
+    background: var(--brand-red) !important;
+    color: #fff !important;
+}
+
+.gr-chatbot .message.bot {
+    background: #f7f7f7 !important;
+    border: 1px solid #eee;
+}
+
+#welcome-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+#welcome-card {
+    background: white;
+    max-width: 560px;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    text-align: left;
+}
+
+#welcome-card h3 {
+    margin-top: 0;
+    color: var(--brand-red);
+}
+
+#welcome-close {
+    background: var(--brand-red);
+    color: white;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
 """
 
+welcome_modal = gr.HTML(
+    """
+<div id='welcome-modal'>
+  <div id='welcome-card'>
+    <h3>Welcome to BMS AI Assistant</h3>
+    <p>Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitor insights, and PDF reports.</p>
+    <p><strong>Try asking:</strong></p>
+    <ul>
+      <li>Inventory check for BMS0001 in Canada</li>
+      <li>Forecast demand for BMS0001</li>
+      <li>Supplier info for BMS0001</li>
+      <li>Create order for BMS0003 qty 10</li>
+    </ul>
+    <p style='color:#555; font-size: 13px;'>Disclaimer: Demo dataset only. Not production inventory or pricing.</p>
+    <button id='welcome-close'>Continue</button>
+  </div>
+</div>
+<script>
+  const modal = document.getElementById('welcome-modal');
+  const btn = document.getElementById('welcome-close');
+  btn?.addEventListener('click', () => modal?.remove());
+</script>
+"""
+)
+
+initial_assistant_message = (
+    "", "Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitors, and PDF reports."
+)
+
 with gr.Blocks(title="BMS AI Assistant") as demo:
+    welcome_modal.render()
     gr.HTML('<div id="header-title">BMS AI Assistant - Cummins Parts & Service</div>')
     with gr.Row():
         gr.Markdown(
             "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
         )
-    chatbot = gr.Chatbot(elem_id="chatbot")
+    with gr.Row(elem_id="chat-wrapper"):
+        chatbot = gr.Chatbot(elem_id="chatbot", value=[initial_assistant_message], height=500)
     with gr.Row():
-        msg = gr.Textbox(label="Ask me about inventory, orders, or forecasts", scale=4)
+        msg = gr.Textbox(label="Type your query...", scale=4, placeholder="Inventory, orders, forecasts...", lines=2)
         submit = gr.Button("Send", variant="primary")
-    pdf_download = gr.File(label="PDF Report", interactive=False)
+    with gr.Row():
+        pdf_button = gr.Button("Generate Report", variant="secondary")
+        pdf_download = gr.File(label="PDF Report", interactive=False)
     state = gr.State({})
 
     submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
     msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+    pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
     demo.launch(css=css)
