@@ -720,44 +720,93 @@ def generate_report_from_state(chat_history: List, state: Dict):
 # UI definition
 # ----------------------
 
-suggestions = [
-    "Inventory check for BMS0001 in Canada",
-    "Create order for BMS0003 quantity 10 to Toronto",
-    "Demand forecast for Cummins ISX family",
-    "Compare competitor market share vs Cummins",
-    "Generate PDF report for last forecast",
-]
-
 css = """
 :root {
     --brand-red: #b81d13;
+    --light-gray: #f5f6f7;
+    --bubble-gray: #f3f4f6;
 }
 
-#header-title {
-    background-color: var(--brand-red);
+#app-wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+body { background: #f0f2f5; }
+
+#topbar {
+    background: var(--brand-red);
     color: white;
-    padding: 12px;
-    font-weight: bold;
-    border-radius: 6px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    gap: 12px;
+}
+
+#logo-circle {
+    background: white;
+    color: var(--brand-red);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 18px;
+}
+
+#title-block .title {
     font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+}
+
+#title-block .subtitle {
+    margin: 0;
+    font-size: 13px;
+    opacity: 0.9;
 }
 
 #chat-wrapper {
     border: 1px solid #e5e5e5;
     border-radius: 12px;
     padding: 12px;
-    background: #fafafa;
+    background: white;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
 }
 
 .gr-chatbot .message.user {
     background: var(--brand-red) !important;
     color: #fff !important;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
 }
 
 .gr-chatbot .message.bot {
-    background: #f7f7f7 !important;
-    border: 1px solid #eee;
+    background: var(--bubble-gray) !important;
+    border: 1px solid #e7e7e7;
+    border-radius: 14px !important;
+    padding: 12px 14px !important;
+}
+
+.gr-textbox textarea {
+    min-height: 70px !important;
+}
+
+.gr-button-primary {
+    background: var(--brand-red) !important;
+    border-color: var(--brand-red) !important;
+    color: #fff !important;
+    border-radius: 12px !important;
+    height: 52px;
+    font-weight: 700;
+}
+
+.gr-button-secondary {
+    border-radius: 12px !important;
+    height: 52px;
 }
 
 #welcome-modal {
@@ -799,13 +848,13 @@ welcome_modal = gr.HTML(
 <div id='welcome-modal'>
   <div id='welcome-card'>
     <h3>Welcome to BMS AI Assistant</h3>
-    <p>Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitor insights, and PDF reports.</p>
-    <p><strong>Try asking:</strong></p>
+    <p>Hello! I can help with inventory, orders, demand forecasts, competitor insights, and PDF reports.</p>
+    <p><strong>Quick tips:</strong></p>
     <ul>
       <li>Inventory check for BMS0001 in Canada</li>
-      <li>Forecast demand for BMS0001</li>
-      <li>Supplier info for BMS0001</li>
-      <li>Create order for BMS0003 qty 10</li>
+      <li>Create order for BMS0005 qty 8 to Dallas</li>
+      <li>Forecast demand for Cummins ISX family</li>
+      <li>Supplier info for BMS0003</li>
     </ul>
     <p style='color:#555; font-size: 13px;'>Disclaimer: Demo dataset only. Not production inventory or pricing.</p>
     <button id='welcome-close'>Continue</button>
@@ -821,7 +870,15 @@ welcome_modal = gr.HTML(
 
 initial_assistant_message = {
     "role": "assistant",
-    "content": "Hello! I am the BMS AI Assistant. I can help with inventory, orders, forecasts, competitors, and PDF reports.",
+    "content": (
+        "Hello! I am the BMS AI Assistant. How can I help you today?\n\n"
+        "**Try asking:**\n"
+        "- Inventory check for BMS0007 in Canada\n"
+        "- Forecast demand for BMS0001\n"
+        "- Supplier info for BMS0003\n"
+        "- Create order for BMS0005 qty 8\n\n"
+        "I can also generate a PDF report with the latest details from our chat."
+    ),
 }
 
 
@@ -841,25 +898,32 @@ def normalize_chat_history(chat_history: List) -> List[Dict[str, str]]:
     return normalized
 
 with gr.Blocks(title="BMS AI Assistant") as demo:
-    welcome_modal.render()
-    gr.HTML('<div id="header-title">BMS AI Assistant - Cummins Parts & Service</div>')
-    with gr.Row():
-        gr.Markdown(
-            "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
+    with gr.Column(elem_id="app-wrapper"):
+        welcome_modal.render()
+        gr.HTML(
+            """
+            <div id="topbar">
+              <div id="logo-circle">B</div>
+              <div id="title-block">
+                <div class="title">BMS AI Assistant</div>
+                <div class="subtitle">Cummins Parts & Service</div>
+              </div>
+            </div>
+            """
         )
-    with gr.Row(elem_id="chat-wrapper"):
-        chatbot = gr.Chatbot(elem_id="chatbot", value=[initial_assistant_message], height=500)
-    with gr.Row():
-        msg = gr.Textbox(label="Type your query...", scale=4, placeholder="Inventory, orders, forecasts...", lines=2)
-        submit = gr.Button("Send", variant="primary")
-    with gr.Row():
-        pdf_button = gr.Button("Generate Report", variant="secondary")
-        pdf_download = gr.File(label="PDF Report", interactive=False)
-    state = gr.State({})
+        with gr.Row(elem_id="chat-wrapper"):
+            chatbot = gr.Chatbot(elem_id="chatbot", value=[initial_assistant_message], height=520)
+        with gr.Row():
+            msg = gr.Textbox(label="", scale=4, placeholder="Type your query...", lines=2)
+            submit = gr.Button("Send", variant="primary")
+        with gr.Row():
+            pdf_button = gr.Button("Generate Report", variant="secondary")
+            pdf_download = gr.File(label="PDF Report", interactive=False)
+        state = gr.State({})
 
-    submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-    msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-    pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
+        submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+        msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+        pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
     demo.launch(css=css)
