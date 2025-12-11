@@ -338,8 +338,7 @@ def build_model():
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        device_map="cpu",
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         trust_remote_code=True,
     )
     return pipeline(
@@ -719,7 +718,7 @@ css = """
 }
 """
 
-with gr.Blocks(title="BMS AI Assistant", css=css) as demo:
+with gr.Blocks(title="BMS AI Assistant") as demo:
     gr.HTML('<div id="header-title">BMS AI Assistant - Cummins Parts & Service</div>')
     with gr.Row():
         gr.Markdown(
@@ -736,4 +735,4 @@ with gr.Blocks(title="BMS AI Assistant", css=css) as demo:
     msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(css=css)
