@@ -675,26 +675,41 @@ def handle_intent(message: str, state: Dict, history: List[Dict[str, str]]):
     return response, pdf_path, state
 
 
+def _normalize_history(chat_history: List) -> List[Dict[str, str]]:
+    """Convert Chatbot history into message dictionaries for Gradio 6.x."""
+
+    messages: List[Dict[str, str]] = []
+    for entry in chat_history or []:
+        if isinstance(entry, dict) and "role" in entry and "content" in entry:
+            messages.append(entry)
+        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+            user_msg, assistant_msg = entry
+            messages.append({"role": "user", "content": str(user_msg)})
+            messages.append({"role": "assistant", "content": str(assistant_msg)})
+    return messages
+
+
 def stream_response(message: str, chat_history: List, state: Dict):
-    """Stream a response while keeping compatibility with older Gradio Chatbot defaults."""
+    """Stream a response while keeping compatibility with Gradio 6.1 message format."""
 
     state = state or {}
     assistant_history = state.get("history", [])
     response, pdf_path, updated_state = handle_intent(message, state, assistant_history)
 
-    ui_history = list(chat_history or [])
-    base_history = ui_history + [(message, "")]
+    ui_messages = _normalize_history(chat_history)
+    base_messages = ui_messages + [{"role": "user", "content": message}]
 
     tokens = response.split()
     buffer = ""
     for tok in tokens:
         buffer += tok + " "
-        partial_history = base_history[:-1] + [(message, buffer.strip())]
-        yield partial_history, updated_state, pdf_path
+        partial_messages = base_messages + [{"role": "assistant", "content": buffer.strip()}]
+        yield partial_messages, updated_state, pdf_path
 
     assistant_history.append({"user": message, "assistant": response})
     updated_state["history"] = assistant_history
-    yield base_history[:-1] + [(message, response)], updated_state, pdf_path
+    final_history = base_messages + [{"role": "assistant", "content": response}]
+    yield final_history, updated_state, pdf_path
 
 
 # ----------------------
