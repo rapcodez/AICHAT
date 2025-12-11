@@ -672,18 +672,24 @@ def handle_intent(message: str, state: Dict, history: List[Dict[str, str]]):
     return response, pdf_path, state
 
 
-def stream_response(message: str, chat_history: List, state: Dict):
+def stream_response(message: str, chat_history: List[Dict], state: Dict):
     state = state or {}
     assistant_history = state.get("history", [])
     response, pdf_path, updated_state = handle_intent(message, state, assistant_history)
+
+    ui_history = list(chat_history or [])
+    user_turn = {"role": "user", "content": message}
+    base_history = ui_history + [user_turn]
+
     tokens = response.split()
     buffer = ""
     for tok in tokens:
         buffer += tok + " "
-        yield chat_history + [[message, buffer.strip()]], updated_state, pdf_path
+        yield base_history + [{"role": "assistant", "content": buffer.strip()}], updated_state, pdf_path
+
     assistant_history.append({"user": message, "assistant": response})
     updated_state["history"] = assistant_history
-    yield chat_history + [[message, response]], updated_state, pdf_path
+    yield base_history + [{"role": "assistant", "content": response}], updated_state, pdf_path
 
 
 # ----------------------
@@ -724,7 +730,7 @@ with gr.Blocks(title="BMS AI Assistant") as demo:
         gr.Markdown(
             "**Try asking:**\n- Inventory check for BMS0001 in Canada\n- Create order for BMS0003 quantity 10 to Toronto\n- Demand forecast for Cummins ISX family\n- Compare competitor market share vs Cummins\n- Generate PDF report"
         )
-    chatbot = gr.Chatbot(elem_id="chatbot")
+    chatbot = gr.Chatbot(elem_id="chatbot", type="messages")
     with gr.Row():
         msg = gr.Textbox(label="Ask me about inventory, orders, or forecasts", scale=4)
         submit = gr.Button("Send", variant="primary")
