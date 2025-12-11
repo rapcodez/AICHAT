@@ -4,7 +4,7 @@ emoji: 🚚
 colorFrom: red
 colorTo: gray
 sdk: gradio
-sdk_version: "4.41.0"
+sdk_version: "6.1.8"
 app_file: app.py
 pinned: false
 ---
@@ -45,6 +45,7 @@ An open-source Gradio chatbot for Cummins engines and spare parts. It runs fully
 2. Upload `app.py`, `requirements.txt`, and this `README.md`.
 3. (Optional) Set `LLM_MODEL` env var in the Space settings to swap in any compatible instruct model hosted on Hugging Face.
 4. The Space will build and launch automatically; open the public URL to start chatting.
+5. The `sdk_version` is pinned to **6.1.8** and matches `requirements.txt` to avoid upgrade prompts and keep the UI compatible.
 
 ## Example Prompts
 - "Inventory check for BMS0001 in Canada"
