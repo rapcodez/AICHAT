@@ -1,0 +1,6 @@
+gradio>=4.41.0
+transformers>=4.40.2
+torch>=2.1.0
+pandas>=2.2.2
+numpy>=1.26.4
+fpdf2>=2.7.9
