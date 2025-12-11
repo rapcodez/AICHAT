@@ -723,91 +723,66 @@ def generate_report_from_state(chat_history: List, state: Dict):
 css = """
 :root {
     --brand-red: #b81d13;
-    --light-gray: #f5f6f7;
-    --bubble-gray: #f3f4f6;
+    --card-gray: #f4f6f8;
+    --shadow: 0 10px 30px rgba(0,0,0,0.12);
 }
 
-#app-wrapper {
-    max-width: 1100px;
-    margin: 0 auto;
-}
+body { background: #eef1f4; }
 
-body { background: #f0f2f5; }
+#page { max-width: 1040px; margin: 0 auto; padding-bottom: 24px; }
 
-#topbar {
+#header-bar {
     background: var(--brand-red);
     color: white;
     display: flex;
     align-items: center;
-    padding: 14px 18px;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    gap: 12px;
+    padding: 16px 20px;
+    border-radius: 0 0 18px 18px;
+    box-shadow: var(--shadow);
+    gap: 14px;
 }
 
-#logo-circle {
+#header-icon {
     background: white;
     color: var(--brand-red);
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     display: grid;
     place-items: center;
     font-weight: 800;
-    font-size: 18px;
-}
-
-#title-block .title {
     font-size: 20px;
-    font-weight: 700;
-    margin: 0;
 }
 
-#title-block .subtitle {
-    margin: 0;
-    font-size: 13px;
-    opacity: 0.9;
-}
+#header-copy .title { margin: 0; font-size: 22px; font-weight: 800; }
+#header-copy .subtitle { margin: 0; opacity: 0.9; font-size: 13px; }
 
-#chat-wrapper {
-    border: 1px solid #e5e5e5;
-    border-radius: 12px;
-    padding: 12px;
+#chat-shell {
     background: white;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    margin-top: 14px;
+    box-shadow: var(--shadow);
 }
 
+.gr-chatbot { background: transparent !important; border: none !important; }
+.gr-chatbot .message { border-radius: 14px !important; padding: 14px 16px !important; }
 .gr-chatbot .message.user {
     background: var(--brand-red) !important;
     color: #fff !important;
-    border-radius: 14px !important;
-    padding: 12px 14px !important;
+    margin-left: auto;
+    border: none;
 }
-
 .gr-chatbot .message.bot {
-    background: var(--bubble-gray) !important;
-    border: 1px solid #e7e7e7;
-    border-radius: 14px !important;
-    padding: 12px 14px !important;
+    background: var(--card-gray) !important;
+    border: 1px solid #e0e4e7;
+    color: #111827;
 }
 
-.gr-textbox textarea {
-    min-height: 70px !important;
-}
-
-.gr-button-primary {
-    background: var(--brand-red) !important;
-    border-color: var(--brand-red) !important;
-    color: #fff !important;
-    border-radius: 12px !important;
-    height: 52px;
-    font-weight: 700;
-}
-
-.gr-button-secondary {
-    border-radius: 12px !important;
-    height: 52px;
-}
+.gr-textbox textarea { min-height: 70px !important; background: #f8fafc; border-radius: 14px !important; }
+.gr-button-primary { background: var(--brand-red) !important; border-color: var(--brand-red) !important; color: #fff !important; border-radius: 14px !important; font-weight: 800; }
+.gr-button-secondary { border-radius: 14px !important; }
 
 #welcome-modal {
     position: fixed;
@@ -818,29 +793,16 @@ body { background: #f0f2f5; }
     justify-content: center;
     z-index: 50;
 }
-
 #welcome-card {
     background: white;
-    max-width: 560px;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+    max-width: 620px;
+    padding: 26px;
+    border-radius: 14px;
+    box-shadow: 0 12px 38px rgba(0,0,0,0.28);
     text-align: left;
 }
-
-#welcome-card h3 {
-    margin-top: 0;
-    color: var(--brand-red);
-}
-
-#welcome-close {
-    background: var(--brand-red);
-    color: white;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
+#welcome-card h3 { margin-top: 0; color: var(--brand-red); }
+#welcome-close { background: var(--brand-red); color: white; padding: 10px 16px; border: none; border-radius: 10px; cursor: pointer; }
 """
 
 welcome_modal = gr.HTML(
@@ -898,32 +860,32 @@ def normalize_chat_history(chat_history: List) -> List[Dict[str, str]]:
     return normalized
 
 with gr.Blocks(title="BMS AI Assistant") as demo:
-    with gr.Column(elem_id="app-wrapper"):
+    with gr.Column(elem_id="page"):
         welcome_modal.render()
         gr.HTML(
             """
-            <div id="topbar">
-              <div id="logo-circle">B</div>
-              <div id="title-block">
-                <div class="title">BMS AI Assistant</div>
-                <div class="subtitle">Cummins Parts & Service</div>
+            <div id="header-bar">
+              <div id="header-icon">B</div>
+              <div id="header-copy">
+                <p class="title">BMS AI Assistant</p>
+                <p class="subtitle">Cummins Parts & Service</p>
               </div>
             </div>
             """
         )
-        with gr.Row(elem_id="chat-wrapper"):
+        with gr.Column(elem_id="chat-shell"):
             chatbot = gr.Chatbot(elem_id="chatbot", value=[initial_assistant_message], height=520)
-        with gr.Row():
-            msg = gr.Textbox(label="", scale=4, placeholder="Type your query...", lines=2)
-            submit = gr.Button("Send", variant="primary")
-        with gr.Row():
-            pdf_button = gr.Button("Generate Report", variant="secondary")
-            pdf_download = gr.File(label="PDF Report", interactive=False)
-        state = gr.State({})
+            with gr.Row():
+                msg = gr.Textbox(label="", scale=6, placeholder="Type your query...", lines=2)
+                submit = gr.Button("Send", variant="primary", scale=1)
+            with gr.Row():
+                pdf_button = gr.Button("Generate Report", variant="secondary")
+                pdf_download = gr.File(label="PDF Report", interactive=False)
+            state = gr.State({})
 
-        submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-        msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-        pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
+            submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+            msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+            pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
     demo.launch(css=css)
