@@ -533,6 +533,9 @@ def format_inventory(item_code: str) -> Tuple[str, Optional[pd.DataFrame]]:
 
 
 def respond_with_model(prompt: str, history: List[Dict[str, str]]) -> str:
+    if os.getenv("DISABLE_LLM", "").lower() in {"1", "true", "yes"}:
+        return f"(stubbed response) {prompt}"
+
     messages = []
     for turn in history[-20:]:
         messages.append(f"User: {turn['user']}")

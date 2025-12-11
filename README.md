@@ -40,6 +40,13 @@ An open-source Gradio chatbot for Cummins engines and spare parts. It runs fully
    ```
 4. Open the printed local URL in your browser to chat.
 
+## Testing
+- Unit tests run offline without loading the LLM by setting `DISABLE_LLM=true` (handled automatically in the suite).
+- Execute the test suite:
+  ```bash
+  pytest
+  ```
+
 ## Deploying to Hugging Face Spaces
 1. Create a new Space (Gradio + CPU is sufficient).
 2. Upload `app.py`, `requirements.txt`, and this `README.md`.
