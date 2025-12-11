@@ -1,3 +1,14 @@
+---
+title: BMS AI Assistant (Cummins Parts Chatbot)
+emoji: 🚚
+colorFrom: red
+colorTo: gray
+sdk: gradio
+sdk_version: "4.41.0"
+app_file: app.py
+pinned: false
+---
+
 # BMS AI Assistant (Cummins Parts Chatbot)
 
 An open-source Gradio chatbot for Cummins engines and spare parts. It runs fully on free Hugging Face Spaces CPU tiers and uses only open models and Python libraries.
