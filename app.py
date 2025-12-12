@@ -721,88 +721,214 @@ def generate_report_from_state(chat_history: List, state: Dict):
 # ----------------------
 
 css = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
 :root {
-    --brand-red: #b81d13;
-    --card-gray: #f4f6f8;
-    --shadow: 0 10px 30px rgba(0,0,0,0.12);
+    --primary-color: #d01010;
+    --primary-dark: #a00c0c;
+    --bg-color: #f3f4f6;
+    --chat-bg: #ffffff;
+    --user-msg-bg: #d01010;
+    --user-msg-text: #ffffff;
+    --bot-msg-bg: #f3f4f6;
+    --bot-msg-text: #1f2937;
+    --border-color: #e5e7eb;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
-body { background: #eef1f4; }
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-color);
+}
 
-#page { max-width: 1040px; margin: 0 auto; padding-bottom: 24px; }
+#app-shell {
+    max-width: 980px;
+    margin: 0 auto;
+    min-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+}
 
 #header-bar {
-    background: var(--brand-red);
+    background-color: var(--primary-color);
     color: white;
+    padding: 18px;
+    text-align: center;
+    font-size: 1.15rem;
+    font-weight: 700;
+    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
-    padding: 16px 20px;
-    border-radius: 0 0 18px 18px;
-    box-shadow: var(--shadow);
-    gap: 14px;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 0 0 12px 12px;
 }
 
-#header-icon {
-    background: white;
-    color: var(--brand-red);
-    width: 48px;
-    height: 48px;
+#header-bar svg {
+    width: 24px;
+    height: 24px;
+    fill: currentColor;
+}
+
+#chat-card {
+    background: var(--chat-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    overflow: hidden;
+}
+
+.bms-chatbot .wrap.svelte-drgfj3 {
+    padding: 18px;
+}
+
+.bms-chatbot .message-row {
+    margin-bottom: 14px;
+}
+
+.bms-chatbot .message.user {
+    background: var(--user-msg-bg) !important;
+    color: var(--user-msg-text) !important;
+    border-radius: 16px 16px 4px 16px !important;
+    box-shadow: var(--shadow-sm);
+    padding: 14px 18px !important;
+    max-width: 80%;
+    align-self: flex-end;
+    display: flex;
+    gap: 12px;
+    flex-direction: row-reverse;
+}
+
+.bms-chatbot .message.bot {
+    background: var(--bot-msg-bg) !important;
+    color: var(--bot-msg-text) !important;
+    border-radius: 16px 16px 16px 4px !important;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 14px 18px !important;
+    max-width: 80%;
+    align-self: flex-start;
+    display: flex;
+    gap: 12px;
+}
+
+.bms-chatbot .message {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease-out;
+    position: relative;
+}
+
+.bms-chatbot .avatar {
+    width: 36px !important;
+    height: 36px !important;
     border-radius: 50%;
-    display: grid;
-    place-items: center;
-    font-weight: 800;
-    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
 }
 
-#header-copy .title { margin: 0; font-size: 22px; font-weight: 800; }
-#header-copy .subtitle { margin: 0; opacity: 0.9; font-size: 13px; }
-
-#chat-shell {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    padding: 16px;
-    margin-top: 14px;
-    box-shadow: var(--shadow);
+.bms-chatbot .avatar svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
 }
 
-.gr-chatbot { background: transparent !important; border: none !important; }
-.gr-chatbot .message { border-radius: 14px !important; padding: 14px 16px !important; }
-.gr-chatbot .message.user {
-    background: var(--brand-red) !important;
-    color: #fff !important;
-    margin-left: auto;
-    border: none;
-}
-.gr-chatbot .message.bot {
-    background: var(--card-gray) !important;
-    border: 1px solid #e0e4e7;
-    color: #111827;
+.bms-chatbot .message.bot .avatar { background: var(--primary-color); color: white; }
+.bms-chatbot .message.user .avatar { background: white; color: var(--primary-color); }
+
+.bms-chatbot .message.bot::before,
+.bms-chatbot .message.user::before {
+    content: "";
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm);
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
-.gr-textbox textarea { min-height: 70px !important; background: #f8fafc; border-radius: 14px !important; }
-.gr-button-primary { background: var(--brand-red) !important; border-color: var(--brand-red) !important; color: #fff !important; border-radius: 14px !important; font-weight: 800; }
-.gr-button-secondary { border-radius: 14px !important; }
+.bms-chatbot .message.bot::before {
+    background-color: var(--primary-color);
+    margin-right: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23ffffff' d='M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7V5.73C9.4 5.39 9 4.74 9 4a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5M12 8a6 6 0 0 0-6 6h12a6 6 0 0 0-6-6z'/%3E%3C/svg%3E");
+}
+
+.bms-chatbot .message.user::before {
+    background-color: #ffffff;
+    margin-left: 10px;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%23d01010' d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E");
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.bms-input-row .gr-textbox { flex: 1; }
+.bms-input-row textarea {
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 14px 18px;
+    background: #f9fafb;
+    min-height: 60px;
+    font-size: 1rem;
+    font-family: 'Inter', sans-serif;
+}
+.bms-input-row textarea:focus { box-shadow: 0 0 0 3px rgba(208,16,16,0.1); border-color: var(--primary-color); }
+
+.bms-input-row button, .bms-actions button {
+    background: var(--primary-color) !important;
+    color: white !important;
+    border-radius: 30px !important;
+    padding: 14px 26px !important;
+    font-weight: 700 !important;
+    border: none !important;
+}
+
+.bms-actions button.secondary {
+    background: #fff !important;
+    color: var(--primary-color) !important;
+    border: 1px solid var(--primary-color) !important;
+}
 
 #welcome-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.55);
+    background: rgba(0,0,0,0.5);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 50;
+    z-index: 1000;
 }
+
 #welcome-card {
     background: white;
-    max-width: 620px;
-    padding: 26px;
-    border-radius: 14px;
-    box-shadow: 0 12px 38px rgba(0,0,0,0.28);
-    text-align: left;
+    padding: 28px;
+    border-radius: 10px;
+    max-width: 520px;
+    width: 90%;
+    box-shadow: var(--shadow-md);
 }
-#welcome-card h3 { margin-top: 0; color: var(--brand-red); }
-#welcome-close { background: var(--brand-red); color: white; padding: 10px 16px; border: none; border-radius: 10px; cursor: pointer; }
+
+#welcome-card h3 { margin-top: 0; color: var(--primary-color); }
+
+#welcome-card button {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
 """
 
 welcome_modal = gr.HTML(
@@ -810,16 +936,15 @@ welcome_modal = gr.HTML(
 <div id='welcome-modal'>
   <div id='welcome-card'>
     <h3>Welcome to BMS AI Assistant</h3>
-    <p>Hello! I can help with inventory, orders, demand forecasts, competitor insights, and PDF reports.</p>
-    <p><strong>Quick tips:</strong></p>
+    <p>I am an AI assistant designed to help you with:</p>
     <ul>
-      <li>Inventory check for BMS0001 in Canada</li>
-      <li>Create order for BMS0005 qty 8 to Dallas</li>
-      <li>Forecast demand for Cummins ISX family</li>
-      <li>Supplier info for BMS0003</li>
+      <li>Demand forecasting</li>
+      <li>Inventory and order lookups</li>
+      <li>Supplier and competitor insights</li>
     </ul>
-    <p style='color:#555; font-size: 13px;'>Disclaimer: Demo dataset only. Not production inventory or pricing.</p>
-    <button id='welcome-close'>Continue</button>
+    <p><strong>Important Disclaimer:</strong></p>
+    <p>While I strive for accuracy, this is a demo dataset and responses may contain mistakes. Please verify critical details with the BMS team before making business decisions.</p>
+    <button id='welcome-close'>I Understand</button>
   </div>
 </div>
 <script>
@@ -835,9 +960,9 @@ initial_assistant_message = {
     "content": (
         "Hello! I am the BMS AI Assistant. How can I help you today?\n\n"
         "**Try asking:**\n"
-        "- Inventory check for BMS0007 in Canada\n"
+        "- Inventory check for BMS0001\n"
         "- Forecast demand for BMS0001\n"
-        "- Supplier info for BMS0003\n"
+        "- Supplier info for BMS0001\n"
         "- Create order for BMS0005 qty 8\n\n"
         "I can also generate a PDF report with the latest details from our chat."
     ),
@@ -860,32 +985,35 @@ def normalize_chat_history(chat_history: List) -> List[Dict[str, str]]:
     return normalized
 
 with gr.Blocks(title="BMS AI Assistant") as demo:
-    with gr.Column(elem_id="page"):
+    with gr.Column(elem_id="app-shell"):
         welcome_modal.render()
         gr.HTML(
             """
             <div id="header-bar">
-              <div id="header-icon">B</div>
-              <div id="header-copy">
-                <p class="title">BMS AI Assistant</p>
-                <p class="subtitle">Cummins Parts & Service</p>
-              </div>
+              <svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7V5.73C9.4 5.39 9 4.74 9 4a2 2 0 0 1 2-2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13m9 0a2.5 2.5 0 0 0-2.5 2.5a2.5 2.5 0 0 0 2.5 2.5a2.5 2.5 0 0 0 2.5-2.5a2.5 2.5 0 0 0-2.5-2.5M12 8a6 6 0 0 0-6 6h12a6 6 0 0 0-6-6z"/></svg>
+              <span>BMS AI Assistant</span>
             </div>
             """
         )
-        with gr.Column(elem_id="chat-shell"):
-            chatbot = gr.Chatbot(elem_id="chatbot", value=[initial_assistant_message], height=520)
-            with gr.Row():
+        with gr.Column(elem_id="chat-card"):
+            chatbot = gr.Chatbot(
+                elem_id="chatbot",
+                elem_classes=["bms-chatbot"],
+                show_label=False,
+                value=[initial_assistant_message],
+                height=520,
+            )
+            with gr.Row(elem_classes=["bms-input-row"]):
                 msg = gr.Textbox(label="", scale=6, placeholder="Type your query...", lines=2)
-                submit = gr.Button("Send", variant="primary", scale=1)
-            with gr.Row():
-                pdf_button = gr.Button("Generate Report", variant="secondary")
+                submit = gr.Button("Send", variant="primary")
+            with gr.Row(elem_classes=["bms-actions"]):
+                pdf_button = gr.Button("Generate Report", variant="secondary", elem_classes=["secondary"])
                 pdf_download = gr.File(label="PDF Report", interactive=False)
-            state = gr.State({})
+        state = gr.State({})
 
-            submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-            msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
-            pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
+        submit.click(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+        msg.submit(stream_response, inputs=[msg, chatbot, state], outputs=[chatbot, state, pdf_download])
+        pdf_button.click(generate_report_from_state, inputs=[chatbot, state], outputs=[chatbot, state, pdf_download])
 
 if __name__ == "__main__":
     demo.launch(css=css)
